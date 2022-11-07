@@ -1,0 +1,80 @@
+---
+title: 'Week 3 Homework: West Point Data Cleaning'
+author: "Tiffany Wibsono"
+date: '2022-04-21'
+output:
+  html_document:
+  toc: TRUE
+  toc_float: TRUE
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+{
+library(readxl)
+library(tidyverse)
+library(lubridate)
+library(dplyr)
+}
+
+USMA = read_excel('USMA_Progression.xlsx')
+```
+
+## 2. Mutate
+```{r}
+USMA = USMA %>%
+  group_by(company_n, class, year) %>%
+  mutate(femalespeers_1 = sum(female),
+         malespeers_1 = sum(1-female),
+         femalespeers_1 = case_when(female == 1 ~ femalespeers_1 - 1, TRUE ~ femalespeers_1),
+         malespeers_1 = case_when(female == 0 ~ femalespeers_1 - 0, TRUE ~ malespeers_1),
+         totpeople_1 = femalespeers_1 + malespeers_1)
+```
+## 3. Investigation related to Q2
+```{r}
+errorFemale = filter(USMA, femalespeers != femalespeers_1)
+errorMale = filter(USMA, malespeers != malespeers_1)
+
+#### There are 1350 errors in females peers and 15917 errors in males peers. From my observation, I think the issue might be because of inaccuracy of data entry. From the result, I trust the original data more as the value in new males peers data is too low.
+```
+## 4. Create 2 new columns: Company and Division
+```{r}
+USMA$company = substr(USMA$company_n,1,1)
+USMA$divison = substr(USMA$company_n,3,3)
+```
+## 5. Only show data that contains all four classes during the year
+```{r}
+USMA_filter = USMA %>%
+  filter(year == 81)
+```
+## 6. Making tables
+### A: top 4 companies with the highest continue_or_grad rates
+```{r}
+top4Company = USMA %>%
+  group_by(company)%>%
+  summarize(mean_continue_or_grad_rates = mean(continue_or_grad))
+
+top4Company = top4Company %>%
+  head(4) %>%
+  arrange(desc(mean_continue_or_grad_rates))
+
+top4Company
+```
+### B: continue_or_grad rates by class
+```{r}
+table2 = USMA %>%
+  group_by(class) %>%
+  summarize(mean_continue_or_grad_rates = mean(continue_or_grad))
+
+table2
+```
+### C: continue_or_grad rates OF WOMEN by class
+```{r}
+table3 = USMA %>%
+  group_by(class) %>%
+  filter(female == 1) %>%
+  summarize(mean_continue_or_grad_rates = mean(continue_or_grad))
+
+table3
+```

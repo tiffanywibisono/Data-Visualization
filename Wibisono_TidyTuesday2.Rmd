@@ -1,0 +1,73 @@
+---
+title: "Tidy Tuesday #2"
+author: "Tiffany Wibisono"
+date: '2022-05-11'
+output: 
+  html_document:
+  toc: TRUE
+  toc_float: TRUE
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(tidytuesdayR)
+library(tidyverse)
+library(vtable)
+
+
+nyt_titles <- readr::read_tsv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2022/2022-05-10/nyt_titles.tsv')
+
+nyt_full <- readr::read_tsv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2022/2022-05-10/nyt_full.tsv')
+
+```
+
+1. Top 3 author in NY Best Seller based on the number of occurrence
+```{r}
+top3Author = nyt_titles %>%
+  count(author) %>%
+  arrange(desc(n)) %>%
+  head(3)
+```
+2. Danielle Steel number of books published each year
+```{r}
+DSteel = filter(nyt_titles, author == "Danielle Steel")
+year_DS = DSteel %>%
+  count(year) %>%
+  rename("Danielle Steel" = "n") %>%
+  arrange(desc(year)) %>%
+  head(11)
+```
+3. Stuart Woods number of books published each year
+```{r}
+SWoods = filter(nyt_titles, author == "Stuart Woods")
+year_SW = SWoods %>%
+  count(year) %>%
+  rename("Stuart Woods" = "n") %>%
+  arrange(desc(year)) %>%
+  head(11)
+```
+4. Stephen King number of books published each year
+ Graph
+```{r}
+SKing = filter(nyt_titles, author == "Stephen King")
+year_SK = SKing %>%
+  count(year) %>%
+  rename("Stephen King" = "n") %>%
+  arrange(desc(year)) %>%
+  head(10)
+```
+5. Merge 
+```{r}
+listLastTenYears = list(year_DS, year_SK, year_SW)
+lastTenYears = listLastTenYears%>%
+  reduce(full_join, by = "year")
+```
+5. Graph
+```{r}
+lastTenYears %>%
+  pivot_longer(cols = c("Danielle Steel", "Stuart Woods", "Stephen King")) %>%
+ggplot( aes(x = year, y = value, color = name)) + labs(x = "Year", y = "No. of Books Published Per Year", title = "Number Of Books Published Each Year Based on Top 3 Authors") + scale_x_continuous(breaks = 2010:2020) + geom_line()
+```
+
+The line graph explains the number of books published within the past 10 years based on the top 3 authors. From the given graph, we can see that Danielle Steel's book had the most number of books awarded by NYT Best Sellers, followed by Stuart Woods and Stephen King.

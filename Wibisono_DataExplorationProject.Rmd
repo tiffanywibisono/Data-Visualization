@@ -1,0 +1,182 @@
+---
+title: "Adaptivity Level Visualization"
+author: "Tiffany Wibisono"
+date: '2022-06-03'
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(readxl) 
+library(scales)
+library(ggplot2) 
+library(tidyverse)
+
+dv <- read.csv('students_adaptability_level_online_education.csv') 
+```
+
+Financial Condition
+```{r}
+FC_Low = dv %>%
+  filter(Adaptivity.Level == "Low") %>%
+  group_by(Financial.Condition) %>%
+  count(Financial.Condition) %>%
+  rename("Low" = "n")
+
+FC_Moderate = dv %>%
+  filter(Adaptivity.Level == "Moderate") %>%
+  group_by(Financial.Condition) %>%
+  count(Financial.Condition) %>%
+  rename("Moderate" = "n")
+
+FC_High = dv %>%
+  filter(Adaptivity.Level == "High") %>%
+  #filter(Financial.Condition == c("Poor", "Rich")) %>%
+  group_by(Financial.Condition) %>%
+  count(Financial.Condition) %>%
+  rename("High" = "n")
+
+List_FC = list(FC_Low, FC_Moderate, FC_High)
+FC = List_FC %>%
+  reduce(full_join, by = "Financial.Condition")
+#FC = FC[-c(1),] > remove Mid Financial Condition row
+
+#new columns
+FC$Total = rowSums(FC[, c("Low", "Moderate", "High")])
+FC$Low_pct = round((FC$Low/FC$Total)*100, 1)
+FC$Moderate_pct = round((FC$Moderate/FC$Total)*100, 1)
+FC$High_pct = round((FC$High/FC$Total)*100, 1)
+
+FC %>%
+  pivot_longer(cols = c("Low_pct", "High_pct")) %>%
+  ggplot(aes(x = factor(name,levels = c('High_pct', 'Low_pct')), y = value, fill = Financial.Condition))+ geom_col(position = "dodge", show.legend = FALSE, color = 'black') + scale_y_continuous(labels = percent_format(scale = 1)) + scale_fill_manual(values = c('Mid' = "white", 'Poor' = 'darkorange', 'Rich' = 'blue')) + xlab('Adaptability Levels') + ylab('Financial Condition % of observations') + ggtitle('Online Learning Adaptability by Financial Condition') + theme_linedraw() + annotate('text', label = 'Mid', x = .7, y = 8, color = 'grey')+ annotate('text', label = 'Poor', x = 1, y = 13, color = 'darkorange') + annotate('text', label = 'Rich', x = 1.3, y = 54, color = 'blue') + scale_x_discrete(labels=c("High_pct" = "High", "Low_pct" = "Low")) + geom_text(aes(label = value), position = position_dodge(.9), vjust = -.5)
+
+```
+
+Class Duration
+```{r}
+CD_Low = dv %>%
+  filter(Adaptivity.Level == "Low") %>%
+  group_by(Class.Duration) %>%
+  count(Class.Duration) %>%
+  rename("Low" = "n")
+
+CD_Moderate = dv %>%
+  filter(Adaptivity.Level == "Moderate") %>%
+  group_by(Class.Duration) %>%
+  count(Class.Duration) %>%
+  rename("Moderate" = "n")
+
+CD_High = dv %>%
+  filter(Adaptivity.Level == "High") %>%
+  #filter(Financial.Condition == c("Poor", "Rich")) %>%
+  group_by(Class.Duration) %>%
+  count(Class.Duration) %>%
+  rename("High" = "n")
+
+List_CD = list(CD_Low, CD_Moderate, CD_High)
+CD = List_CD %>%
+  reduce(full_join, by = "Class.Duration")
+
+CD[is.na(CD)] = 0
+
+#new columns
+CD$Total = rowSums(CD[, c("Low", "Moderate", "High")])
+CD$Low_pct = round((CD$Low/CD$Total)*100, 1)
+CD$Moderate_pct = round((CD$Moderate/CD$Total)*100, 1)
+CD$High_pct = round((CD$High/CD$Total)*100, 1)
+
+CD %>%
+  pivot_longer(cols = c('Low_pct','High_pct')) %>%
+  ggplot(aes(x = factor(name,levels = c('High_pct', 'Low_pct')), y = value, fill = Class.Duration))+ geom_col(position = "dodge", show.legend = FALSE, color ='black') + scale_y_continuous(labels = percent_format(scale = 1)) + scale_fill_manual(values = c('1-3' = 'white', '0' = 'darkorange', '3-6' = 'white')) + xlab('Adaptability Levels') + ylab('Class Length % of observations') + ggtitle('Online Learning Adaptability by Class Duration (hours)') + theme_linedraw() + annotate('text', label = '1-3 hours', x = 1, y = 17.5, color = 'darkgrey')+ annotate('text', label = 'Less than 1', x = .7, y = 7, color = 'darkorange') + annotate('text', label = '3-6 hours', x = 1.3, y = 16, color = 'darkgrey') + scale_x_discrete(labels=c("High_pct" = "High", "Low_pct" = "Low")) + annotate('text', label = 'Less than 1', x = 1.7, y = 101, color = 'darkorange') + geom_text(aes(label = value), position = position_dodge(.9), vjust = -.5)
+```
+
+
+Education Level
+```{r}
+EL_Low = dv %>%
+  filter(Adaptivity.Level == "Low") %>%
+  group_by(Education.Level) %>%
+  count(Education.Level) %>%
+  rename("Low" = "n")
+
+EL_Moderate = dv %>%
+  filter(Adaptivity.Level == "Moderate") %>%
+  group_by(Education.Level) %>%
+  count(Education.Level) %>%
+  rename("Moderate" = "n")
+
+EL_High = dv %>%
+  filter(Adaptivity.Level == "High") %>%
+  group_by(Education.Level) %>%
+  count(Education.Level) %>%
+  rename("High" = "n")
+
+List_EL = list(EL_Low, EL_Moderate, EL_High)
+EL = List_EL %>%
+  reduce(full_join, by = "Education.Level")
+
+#new columns
+EL$Total = rowSums(EL[, c("Low", "Moderate", "High")])
+EL$Low_pct = round((EL$Low/EL$Total)*100, 1)
+EL$Moderate_pct = round((EL$Moderate/EL$Total)*100, 1)
+EL$High_pct = round((EL$High/EL$Total)*100, 1)
+
+EL %>% filter(Education.Level != 'School') %>% 
+  pivot_longer(cols = c('Low_pct','High_pct')) %>%
+  ggplot(aes(x = factor(name,levels = c('High_pct', 'Low_pct')), y = value, fill = Education.Level))+ geom_col(position = "dodge", show.legend = FALSE, color = 'black') + scale_y_continuous(labels = percent_format(scale = 1)) + scale_fill_manual(values = c('College' = 'darkorange', 'University' = 'blue')) + xlab('Adaptability Levels') + ylab('Education Level % of observations') + ggtitle('Online Learning Adaptability by Education Level') + theme_linedraw() + annotate('text', label = 'College', x = .8, y = 6.5, color = 'darkorange')+ annotate('text', label = 'University', x = 1.3, y = 16, color = 'blue') + scale_x_discrete(labels=c("High_pct" = "High", "Low_pct" = "Low")) +geom_text(aes(label = value), position = position_dodge(.9), vjust = -.4)
+```
+
+
+Age
+```{r}
+dv2 <- dv %>%
+  filter(Adaptivity.Level != 'Moderate')
+
+dv2 <- dv2 %>%
+  mutate(Age = case_when(
+    Age == "1-5" ~ 1,
+    Age == "6-10" ~ 6,
+    Age == '11-15' ~ 11,
+    Age == '16-20' ~16,
+    Age == '21-25' ~ 21,
+    Age == '26-30' ~ 26))
+
+Age_Low = dv2 %>%
+  filter(Adaptivity.Level == "Low") %>%
+  group_by(Age) %>%
+  count(Age) %>%
+  rename("Low" = "n")
+
+
+Age_High = dv2 %>%
+  filter(Adaptivity.Level == "High") %>%
+  group_by(Age) %>%
+  count(Age) %>%
+  rename("High" = "n")
+
+Age_High2 = data.frame(Age = 1, High = 0)
+
+Age_High = rbind(Age_High, Age_High2)
+
+List_Age = list(Age_Low, Age_High)
+
+Age = List_Age %>%
+  reduce(full_join, by = "Age")
+
+Age$Total = rowSums(Age[, c("Low", "High")])
+Age$Low_pct = round((Age$Low/Age$Total)*100, 1)
+Age$High_pct = round((Age$High/Age$Total)*100, 1)
+
+Age <- rename(Age, 'Low Adp' = 'Low_pct')
+Age <- rename(Age, 'High Adp' = 'High_pct')
+
+highlight_df <- Age %>% pivot_longer(cols = c('Low Adp','High Adp')) %>% filter(value %in% c(41.5, 58.5, 96.6, 3.4))
+             
+
+Age %>%
+  pivot_longer(cols = c('Low Adp','High Adp')) %>%
+  ggplot(aes(x = Age, y = value, group = name))+ geom_line(aes(color = name, size = 1), show.legend = FALSE)+geom_point(size = 3) + scale_y_continuous(labels = percent_format(scale = 1)) + scale_x_continuous(breaks=seq(0,30,2)) + labs(x = 'Age', y =  'Age group % of observations', title = 'Online Learning Adaptability by Age') + geom_label(label = 'Low Adapt.', aes(x = 5, y = 90), color = 'darkorange') + scale_color_manual(values = c('High Adp' = 'blue', 'Low Adp' = 'darkorange')) +geom_label(label = 'High Adapt.',aes( x = 2, y = 30), color = 'blue') + theme_linedraw()+geom_label(data = highlight_df, aes(label = value), vjust = -.4, size = 3) #+ geom_segment(aes(x = 16, xend = 16,y = 0, yend = 100),linetype ='dashed', alpha = .2)+ geom_segment(aes(x = 6, xend = 6,y = 0, yend = 75),linetype = 'dashed', alpha = .2)
+```
+

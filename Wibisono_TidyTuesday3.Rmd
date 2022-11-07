@@ -1,0 +1,64 @@
+---
+title: Tidy Tuesday 3
+output: 
+  flexdashboard::flex_dashboard:
+    orientation: columns
+    vertical_layout: fill
+runtime: shiny
+---
+
+```{r global, include=FALSE}
+library(flexdashboard)
+library(tidyverse)
+library(tidytuesdayR)
+library(shiny)
+library(lubridate)
+library(DT)
+
+sevens <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2022/2022-05-24/sevens.csv')
+fifteens <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2022/2022-05-24/fifteens.csv')
+
+us_winner = fifteens %>%
+  filter(winner == "United States") %>%
+  mutate(year = year(date)) %>%
+  group_by(year, tournament) %>%
+  count(year) %>%
+  rename("count_winning" = "n")
+
+
+```
+
+Column {.sidebar}
+-----------------------------------------------------------------------
+
+```{r}
+selectInput("tournamentType", "Tournament Type:", choices = unique(us_winner$tournament), selected = unique(us_winner$tournament)[1])
+
+```
+
+Column {data-width=350}
+-----------------------------------------------------------------------
+
+### Chart A
+
+```{r}
+renderDT({
+us_winner %>%
+  filter(tournament == input$tournamentType) %>%
+  datatable()
+})
+```
+
+### Chart B
+
+```{r}
+renderPlot({
+  us_winner %>%
+    filter(tournament == input$tournamentType) %>%
+    ggplot(aes(x = as.integer(year), y = as.integer(count_winning))) +
+    labs(x = "Year", y = "No. of Winning Games", title = paste0("United States Number of Winning Games in ",input$tournamentType, " Tournanment")) +
+    geom_point() +
+    theme_classic()
+})
+```
+

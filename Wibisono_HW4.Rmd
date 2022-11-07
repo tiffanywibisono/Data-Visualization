@@ -1,0 +1,86 @@
+---
+title: 'Week 4 Homework: College Expenses EDA'
+author: "Tiffany Wibisono"
+date: '2022-04-27'
+output: 
+  html_document:
+  toc: TRUE
+  toc_float: TRUE
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(vtable)
+library(tidyverse)
+library(ggplot2)
+library(scales)
+
+data = readRDS('data/college_expenses_and_enrollment.Rdata')
+
+vtable::vtable(data)
+sumtable(data)
+str(data)
+```
+# 1. Top 3 College Type
+#### I used the count() function to count the number of different college types. Then, I arranged the the result in descending order, and used the head() function to only show the top 3 results. Afterwards, I presented this data in a bar chart using geom_col().
+
+#### The result shows that the most popular college type is Private NP 4-Year, followed by Public 2-Year and Public 4-Year.
+```{r}
+Count_College_Type = data %>%
+  count(type) %>%
+  arrange(desc(n)) %>%
+  head(3)
+
+ggplot(Count_College_Type, aes(x = type, y = n)) + geom_col()
+```
+
+# 2. Private NP 4-Year Data
+#### I used the most popular college type to do further analysis. From the result in #1, most colleges are catagorized as Private NP 4-Year; therefore, I used the filter() function to filter all rows that contain Private NP 4-Year.
+```{r}
+Private_NP_4Year_Data = data %>%
+  filter(type == 'Private NP 4-Year')
+```
+# 3. Summary of Private NP 4-Year Data
+#### I made use of the summary() function to create a summary of the Private NP 4-Year data.
+```{r}
+summary(Private_NP_4Year_Data)
+```
+
+
+
+# FINAL DRAFT: Average Expenses in Private NP 4-Year College
+#### I'm using the summary data from #3 to create a a pie chart for different types of average expenses made by Private NP 4-Year colleges. In the pie chart, I inluded colors, percentage labels, and legend to make the chart more presentable.
+
+##### Findings: Most of the expenses comes from instruction, and the least comes from public service.
+
+```{r}
+mean_research = mean(Private_NP_4Year_Data$Research)
+mean_research
+
+mean_public_service = mean(Private_NP_4Year_Data$Public.Service)
+mean_public_service
+
+mean_student_services = mean(Private_NP_4Year_Data$Student.Services)
+mean_student_services
+
+mean_instruction = mean(Private_NP_4Year_Data$Instruction)
+mean_instruction
+
+mean_academic_support = mean(Private_NP_4Year_Data$Academic.Support)
+mean_academic_support
+
+mean_other = mean(Private_NP_4Year_Data$Other)
+mean_other
+
+mean_expenses = c(13119773, 1780340, 10255967,38335587, 9948486, 31769436)
+types_of_expenses = c("Research", "Public Service", "Student Services", "Instruction", "Academic Support", "Other")
+percentage_expenses = round(100*mean_expenses/sum(mean_expenses), 1)
+expenses_data = data.frame(percentage_expenses, types_of_expenses)
+
+ggplot(expenses_data, aes(x = "", y = percentage_expenses, fill = types_of_expenses)) + 
+  ggtitle("Private NP 4-Year Average Expenses Distribution") +
+  geom_col(color = "black") + 
+  geom_text(aes(label = paste(percentage_expenses, "%")),
+            position = position_stack(vjust = 0.5)) +
+  coord_polar(theta = "y")
+```

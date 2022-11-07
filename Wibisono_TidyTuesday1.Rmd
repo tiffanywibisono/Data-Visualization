@@ -1,0 +1,32 @@
+---
+title: 'Tidy Tuesday #1'
+author: "Tiffany Wibisono"
+date: '2022-05-03'
+output: 
+  html_document:
+  toc: TRUE
+  toc_float: TRUE
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidytuesdayR)
+library(tidyverse)
+library(vtable)
+library(dplyr)
+
+tuesdata <- tidytuesdayR::tt_load('2022-05-03')
+tuesdata <- tidytuesdayR::tt_load(2022, week = 18)
+```
+1. Average Cost Data
+```{r}
+averageCost = (tuesdata$average_cost)
+```
+2. Line graph showing average cost of gas, solar, and wind
+```{r}
+averageCost %>%
+  pivot_longer(cols = c('gas_mwh','solar_mwh','wind_mwh')) %>%
+ggplot( aes(x = year, y = value, color = name)) + geom_line()
+```
+
+The line graph shows that the average cost of solar, wind, and gas gradually decrease over time, but in 2018 the average cost of wind began to constantly increase, while the average cost of solar and gas began to stabalize in 2019 and 2020, respectively. 

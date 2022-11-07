@@ -1,0 +1,154 @@
+---
+title: "Data Translation Project"
+author: "Tiffany Wibisono"
+date: '2022-05-16'
+output: 
+  html_document:
+  toc: TRUE
+  toc_float: TRUE
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+load("king_dailyvisits_load.Rdata")
+load("king_originvisits_load.Rdata")
+load("neighborhood_names.Rdata")
+
+library(tidyverse)
+library(ggplot2)
+library(vtable)
+library(lubridate)
+library(scales)
+```
+\n The purpose of this visualization is to identify the type of industry and the specific brand that has the most number of average visits in July 2020. 
+
+### 1. List of Top 5 Industries
+The given bar graph shows 5 different industries that has the most number of brands. The result shows that Hotels (except Casino Hotels) and Motels industry has the most number of brands, followed by Full-Service Restaurants, Limited-Service Restaurants, New Car Dealers, and Family Clothing Stores industries.
+```{r message=FALSE, warning=FALSE}
+dv_title_list = dv %>%
+  group_by(naics_title) %>%
+  count(naics_title) %>%
+  rename("industry_count" = "n") %>%
+  mutate("number_of_brands_in_each_industry" = industry_count/31) %>%
+  arrange(desc(number_of_brands_in_each_industry))%>%
+  head(5) 
+ggplot(dv_title_list, aes(x = reorder(naics_title, + number_of_brands_in_each_industry), y = number_of_brands_in_each_industry)) +
+  labs(x = "Top 5 Industries", y = "Number of Brands", title = "Total Number of Brands in the Top 5 Industry in July 2020") + 
+  geom_col() + 
+  coord_flip() + 
+  geom_text(aes(label = signif(number_of_brands_in_each_industry)), color = "white", hjust = 2) +
+  theme_classic() +
+  theme(plot.title = element_text(size = 12))
+```
+
+### 2. Average Visits during the Month of July from Top 5 Industries
+Among the 5 industries, Limited-Service Restaurants industry has the highest average visits in July 2020. They had an average of 102 visits that month, which was 343% higher compared to Full-Service Restaurant Industry. Although Limited-Service Restaurant and Full-Service Restaurant are both under restaurant industry, they have significant difference in the average visits because Limited-Service Restaurant Industry fast-food restaurants while Full-Service Restaurant is a typical dine-in restaurant. Therefore, average visits in Limited-Service Restaurant is very high because people who buys food from this industry tend to have tight schedules so they call the restaurant in advance to order food for pick-up or delivery. On the other hand, Full-Service Restaurant industry has lesser average visits as people mainly walk-in to the restaurant for dine-in.
+```{r message=FALSE, warning=FALSE}
+dv$days = wday(dv$date, label = TRUE, abbr = FALSE)
+
+top5Industries = dv %>%
+  filter(naics_title == c("Hotels (except Casino Hotels) and Motels", "Full-Service Restaurants", "Limited-Service Restaurants", "New Car Dealers", "Family Clothing Stores"))
+top5Industries[top5Industries == ""] = NA
+top5Industries = na.omit(top5Industries)
+
+average_data_top5_industries = top5Industries %>%
+  group_by(naics_title) %>%
+  summarize(average_visits = mean(visits_by_day)) 
+ggplot(average_data_top5_industries, aes(x = reorder(naics_title, +average_visits), y = average_visits, fill = naics_title)) +  
+  labs(x = "Top 5 Industries", y = " Average Visits", title = "Average Visits by Industry in July 2020" ) + 
+  geom_col() +
+  coord_flip() + 
+  geom_text(aes(label = round(average_visits, 0)), color = "black", hjust = 1.75) +
+  theme_classic() +
+  scale_fill_manual(values = c("grey",
+                               "grey",
+                               "grey",
+                               "green",
+                               "grey")) +
+  theme(legend.position = "None")
+  
+```
+
+### 3. Traffic in Limited-Service Restuarant 
+The graph shows that there are more traffic during the weekday than weekend. In my opinion, this is because people go to work during the weekdays and did not bring their own lunch. Therefore, they have to buy for food, but since lunch hours at work is usually short, they look for fast-food restaurants to ensure that they could finish their lunch during that allocated time. However, during the weekends more people stay home and cook for their family, which tells us why traffic is lower. 
+```{r message=FALSE, warning=FALSE}
+LSR_data = dv %>%
+  filter(naics_title == "Limited-Service Restaurants")
+LSR_data[LSR_data == ""] = NA
+LSR_data = na.omit(LSR_data)
+
+wday_LSR = LSR_data %>%
+  filter(days == c("Monday", "Tuesday", "Wednesday", "Thursday")) %>%
+  group_by(naics_title) %>%
+  summarize(avg_wday = as.integer(mean(visits_by_day)))
+
+wend_LSR = LSR_data %>%
+  filter(days == c("Friday", "Saturday", "Sunday")) %>%
+  group_by(naics_title) %>%
+  summarize(avg_wend = as.integer(mean(visits_by_day)))
+
+list_traffic_LSR = list(wday_LSR, wend_LSR)
+traffic_LSR = list_traffic_LSR %>%
+  reduce(full_join, by= "naics_title")
+
+type = c("Weekday", "Weekend")
+average_visits = c("99", "97")
+traffic_df_LSR = data.frame(type, average_visits)
+
+ggplot(traffic_df_LSR, aes(x = type, y = average_visits)) +
+  labs(x = "", y = "Average Visits", title = "Limited-Service Restaurant Traffic in July 2020") +
+  geom_col() +
+  geom_text(aes(label = average_visits), color = "white", vjust = 3) +
+  theme_classic()
+```
+
+### 4. Top 5 Brands that have the Most Traffic During Weekdays
+The bar graph shows that the most traffic during weekdays come from McDonald's. This tells us that McDonald's is still the most popular fast-food among the other 68 brands in the industry. 
+```{r message=FALSE, warning=FALSE}
+LSR_brand_wday = LSR_data %>%
+  filter(days == c("Monday", "Tuesday", "Wednesday", "Thursday")) %>%
+  group_by(brands) %>%
+  summarize(avg_wday_visits = as.integer(mean(visits_by_day))) %>%
+  arrange(desc(avg_wday_visits)) %>%
+  head(5)
+
+ggplot(LSR_brand_wday, aes(x = reorder(brands, -avg_wday_visits), y = avg_wday_visits, fill = brands)) +
+  labs(x = "Brand", y = "Average Visits", title = "5 Most Visited Restaurants during the Weekdays in July 2020") +
+  geom_col() +
+  geom_text(aes(label = avg_wday_visits), color = "black", vjust = 3) +
+  theme_classic() +
+  scale_fill_manual(values = c("grey",
+                               "grey",
+                               "green",
+                               "grey",
+                               "grey")) +
+  theme(legend.position = "None")
+```
+
+
+### 5. McDonald's Average Visits Per Location
+McDonald's is located in 13 different districts around Washington State. From the given graph, it is shown that the average traffic on the weekdays in each district is similar. Central district has 1084 average visits in July 2020, which is the highest among the others. All of these districts are highly populated areas, which explains why McDonald's traffic is high. Moreover, some of the districts such as Central, Downtown, and Lake Union are surrounded by offices. As a result, employees may be having McDonald's for lunch during office hours as it is fast and convenient.
+```{r message=FALSE, warning=FALSE}
+mcd_data = ov %>%
+  right_join(neighborhood_names) %>%
+  right_join(dv) %>%
+  filter(brands == "McDonald's") %>%
+  #distinct(NEIGHBORHOOD_DISTRICT_NAME) %>%
+  filter(days == c("Monday", "Tuesday", "Wednesday", "Thursday")) %>%
+  group_by(NEIGHBORHOOD_DISTRICT_NAME) %>%
+  summarize(average_visits = as.integer(mean(visits_by_day))) %>%
+  arrange(desc(average_visits))
+
+ggplot(mcd_data, aes(x = reorder(NEIGHBORHOOD_DISTRICT_NAME, +average_visits), y = average_visits)) + 
+  labs(x = "Neighborhood District Name", y = "Average Visits", title = "McDonald's Average Weekday Visits by District in July 2020") +
+  geom_col() +
+  geom_text(aes(label = average_visits), color = "white", hjust = 2) +
+  coord_flip()
+``` 
+
+
+
+
+
+
